@@ -1,0 +1,67 @@
+Pub-Sub API
+
+CLASSES
+----------------
+Publisher 
+Subscriber 
+Topic
+Note
+
+class Publisher API For Clients
+{
+	Publisher nameOfInstance; //Creates Publisher
+	void Register(const std::string& topic); //Registers Publisher to Topic
+	void Unregister(const std::string& topic); //Unregisters Publisher 
+	void Publish(const std::string&, Topic);	//Publishes Note to topic	
+}
+
+
+class Subscriber API For Clients
+{
+	Subscriber nameOfInstance; //Creates Subscriber
+	
+	void Register(const std::string&); 
+	/*
+		void Register(const std::string&) allows subscriber to 
+		register to a topic represented internally as a string
+		once you register to a topic, an internal list in subscriber
+		is updated with any notes a publisher decides to publish a note on 
+		some topic.
+	*/
+
+	void Unregister(const std::string&);
+	/*
+		Updates are no longer made to this internal Notes List.
+	*/
+}
+
+class Topic API For Clients
+{
+	Topic(const std::string& top) //creates topic with string top 
+	std::string getTopic();	//retrieves topic
+	void getAvailableTopics();	//shows all topics published on
+	bool publisher(const Topic&, std::list<Note>*); sends notes to Subscriber
+}
+
+class Note API For Clients
+{
+	Note(); //Creates Note
+	Note(const std::string& note, const std::string& publisher); 
+	/*
+		creates note with note and publisher information
+	*/
+
+	std::string getNote(); //retrieves Note
+	std::string getPublisher(); //retrieves Publisher
+}
+
+Topic and Note are used mostly between Subscriber and Publisher, but I made sure their methods were public so testing can be done on them. 
+
+to compile...put all files in same directory
+g++ -c -I./ -std=c++11  note.cpp publisher.cpp subscriber.cpp topic.cpp
+
+then 
+
+g++ -I./ -std=c++11 *.o 
+OR 
+g++ -I./ -std=c++11 note.o publisher.o subscriber.o topic.o
