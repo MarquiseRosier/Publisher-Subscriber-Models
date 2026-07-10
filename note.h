@@ -12,7 +12,7 @@ public:
 	std::string getPublisher();
 	
 private:
-	std::string message, pub;
+	std::string message, pub, time;
 };
 
 #endif
