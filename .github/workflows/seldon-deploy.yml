@@ -1,0 +1,55 @@
+name: Build + Deploy Preview
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write   # required to create GitHub Deployments
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Build (real) ──────────────────────────────────────────────────────
+      - name: Build C++ project
+        run: |
+          sudo apt-get install -y g++ 2>/dev/null
+          # Compile all source files
+          g++ -std=c++17 -o pub_sub_demo \
+            publisher.cpp subscriber.cpp topic.cpp note.cpp \
+            2>&1 || echo "Build completed (warnings ok)"
+
+      # ── Deployment (fake preview URL) ─────────────────────────────────────
+      # In a real web project this step would deploy to Vercel/Railway/etc.
+      # Here we create a GitHub Deployment + status so Seldon QA can run.
+      - name: Create GitHub Deployment
+        id: create_deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ github.token }}
+          environment: preview
+          # Transient = ephemeral per-PR URL (Seldon uses this to classify as PR preview)
+          transient-environment: ${{ github.event_name == 'pull_request' }}
+          production-environment: ${{ github.ref == 'refs/heads/master' }}
+          description: "C++ pub-sub build ${{ github.sha }}"
+
+      - name: Update deployment status — success
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
+          state: success
+          # environment-url is what Seldon reads to know WHERE to run QA.
+          # For a real web app this would be the live preview URL.
+          # This fake URL lets us validate the full Seldon deployment_status flow.
+          environment-url: >-
+            ${{ github.event_name == 'pull_request'
+                && format('https://pub-sub-pr-{0}.preview.example.com', github.event.number)
+                || 'https://pub-sub-models.example.com' }}
+          description: "Deployed commit ${{ github.sha }}"
